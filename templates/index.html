@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search</title>
+    <style>
+        html, body, ul {
+            padding: 0;
+            margin: 0;
+        }
+
+        #container {
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        #contents {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .row {
+
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <label for="word">
+        <input type="text" id="word"/>
+    </label>
+    <input type="button" id="addBtn" value="Add"/>
+    <input type="button" id="clearBtn" value="Clear"/>
+    <input type="button" id="searchBtn" value="Search"/>
+    <ul id="words">
+
+    </ul>
+    <div id="contents">
+    </div>
+</div>
+<script type="text/javascript">
+    const wordEl = document.querySelector('#word')
+    const addBtn = document.querySelector('#addBtn')
+    const clearBtn = document.querySelector('#clearBtn')
+    const wordsEl = document.querySelector('#words')
+    const contents = document.querySelector('#contents');
+    const searchBtn = document.querySelector('#searchBtn');
+    addBtn.addEventListener('click', () => {
+        const li = document.createElement('li');
+        const text = document.createTextNode(wordEl.value);
+        li.appendChild(text)
+        wordsEl.appendChild(li)
+        wordEl.value = '';
+    });
+    clearBtn.addEventListener('click', () => {
+        wordsEl.innerHTML = "";
+    })
+
+    function showList(list) {
+        const nodes = []
+        list.forEach(data => {
+            const lines = [];
+            data.lines.forEach(line => {
+                lines.push(`
+                    <li>${line.lineno} ${line.line}</li>
+                `)
+            })
+
+            nodes.push(`
+                <div class="row">
+                    <h3>${data.filename}</h3>
+                    ${lines.length > 0 ? `<ul>${lines.join('')}</ul>` : ``}
+                </div>
+            `)
+        })
+
+        contents.innerHTML = nodes.join('');
+    }
+
+    searchBtn.addEventListener("click", () => {
+        const list = wordsEl.querySelectorAll('li');
+        if (list.length < 1) {
+            alert('검색어를 입력하세요');
+        }
+        const words = []
+        for (const node of list) {
+            words.push(node.textContent);
+        }
+        fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                words: words
+            })
+        })
+            .then(resp => resp.json())
+            .then(json => {
+                showList(json);
+            })
+    })
+</script>
+</body>
+</html>

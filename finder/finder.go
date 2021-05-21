@@ -85,7 +85,7 @@ func (f *Finder) findWordInFiles(filename, path string, words []string, cb chan 
 				if strings.Contains(line, word) {
 					isLineContains = true
 					if _, exists := findInfo.WordMap[word]; !exists {
-						findInfo.WordMap[word] = 1
+						findInfo.WordMap[word] = 0
 					}
 					findInfo.WordMap[word] = findInfo.WordMap[word] + 1
 				}
