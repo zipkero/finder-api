@@ -7,8 +7,6 @@ import (
 	"github.com/zipkero/finder-api/swa"
 	"net/http"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 )
 
@@ -17,11 +15,11 @@ func main() {
 	if len(os.Args) > 1 {
 		port, _ = strconv.Atoi(os.Args[1])
 	}
-	//dir := `D:\ecsolution\Master\80 Contents\WebResource\Contents\js`
-
+	dir := `D:\ecsolution\Master\80 Contents\WebResource\Contents\js`
+	/*
 	_, filename, _, _ := runtime.Caller(0)
 	dir := filepath.Join(filepath.Dir(filename), "pages")
-
+	*/
 	webApplication := swa.NewSimpleWebApplication(port)
 	webApplication.HandleFunc("POST", "/search", func(res http.ResponseWriter, req *http.Request) {
 		var params map[string][]string
@@ -30,9 +28,9 @@ func main() {
 			return
 		}
 		words := params["words"]
-		finderApp := finder.NewFinder(words)
+		finderApp := finder.NewFinder(dir)
 
-		files := finderApp.FindFiles(dir)
+		files := finderApp.FindFiles(words)
 
 		if err := json.NewEncoder(res).Encode(files); err != nil {
 			fmt.Println(err)

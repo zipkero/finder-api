@@ -16,29 +16,31 @@ type LineInfo struct {
 }
 
 type FindInfo struct {
-	Filename string     `json:"filename"`
-	Lines    []LineInfo `json:"lines"`
+	Filename string         `json:"filename"`
+	Lines    []LineInfo     `json:"lines"`
+	WordMap  map[string]int `json:"words"`
 }
 
 type Finder struct {
-	words []string
+	dir string
 }
 
-func NewFinder(words []string) *Finder {
-	return &Finder{words}
+func NewFinder(dir string) *Finder {
+	return &Finder{dir: dir}
 }
 
-func (f *Finder) FindFiles(dir string) []*FindInfo {
+func (f *Finder) FindFiles(words []string) []*FindInfo {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	ch := make(chan *FindInfo)
+
 	cnt := 0
-	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.Walk(f.dir, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
 
-		go f.findWordInFiles(info.Name(), path, ch)
+		go f.findWordInFiles(info.Name(), path, words, ch)
 
 		cnt += 1
 		return nil
@@ -62,11 +64,11 @@ func (f *Finder) FindFiles(dir string) []*FindInfo {
 	return findInfos
 }
 
-func (f *Finder) findWordInFiles(filename, path string, cb chan *FindInfo) {
-	findInfo := &FindInfo{filename, []LineInfo{}}
+func (f *Finder) findWordInFiles(filename, path string, words []string, cb chan *FindInfo) {
+	findInfo := &FindInfo{Filename: filename, Lines: []LineInfo{}, WordMap: make(map[string]int)}
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println("no files : ", file.Name())
+		fmt.Println("no files : ", filename)
 		cb <- nil
 		return
 	}
@@ -77,11 +79,15 @@ func (f *Finder) findWordInFiles(filename, path string, cb chan *FindInfo) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if len(f.words) > 0 {
+		if len(words) > 0 {
 			isLineContains := false
-			for _, word := range f.words {
+			for _, word := range words {
 				if strings.Contains(line, word) {
 					isLineContains = true
+					if _, exists := findInfo.WordMap[word]; !exists {
+						findInfo.WordMap[word] = 1
+					}
+					findInfo.WordMap[word] = findInfo.WordMap[word] + 1
 				}
 			}
 
